@@ -7,6 +7,25 @@ const template = [
         label: app.name
     },
     {
+        label: 'File',
+        submenu: [
+            {
+                label: 'save File',
+                accelerator: 'CmdOrCtrl+s',
+                click: ()=>{
+                    saveFile();
+                }
+            },
+            {
+                label: 'open File',
+                accelerator: 'CmdOrCtrl+o',
+                click: ()=>{
+                    openFile();
+                }
+            }
+        ]
+    },
+    {
         role: 'help',
         submenu: [
             {
@@ -74,22 +93,66 @@ template.unshift({
 
 
 
+let saveFile = function(){
+    console.log('Saving the file');
+    BrowserWindow.getFocusedWindow().webContents.send('editor-event', 'save');
+}
+
+let openFile = function(){
+    const window = BrowserWindow.getFocusedWindow();
+    const options = {
+        title: 'markdown 파일 선택',
+        filters: [
+            {
+                name: 'markdown 파일',
+                extensions : ['md']
+            },
+            {
+                name: 'text 파일',
+                extensions: ['txt']
+            }
+        ]
+    }
+
+    dialog.showOpenDialog(window, options)
+    .then((result)=>{
+        if(result.canceled === true || result.filePaths.length === 0 ){
+            dialog.showErrorBox('!!!', '파일을 선택 해주세요.');
+            return;
+        }
+
+        const content = fs.readFileSync(result.filePaths[0], {encoding: 'utf-8'});
+        //const content = fs.readFileSync(result.filePaths[0]); content.toString();
+        console.log(content);
+
+        BrowserWindow.getFocusedWindow().webContents.send('load', content);
+    })
+    .catch((err)=>{console.log(err);});
+
+
+}
+
+
+
+//////////////////ipc/////////////////////
+
 ipcMain.on('editor-reply', (event, arg)=>{
     console.log(`Received reply form web page: ${arg}`);
 });
 
+///////////////showSavingDialog => save////////////////////
 ipcMain.on('save', (event, arg)=>{
     console.log('Saving content of the file');
     console.log(arg);
 
-    ////////showSavingDialog => save////////////////////
+
     const window = BrowserWindow.getFocusedWindow();
     const options = {
         title: 'Save markdown file',
-        filters: {
-            name: 'MyFile',
+        filters: [{
+            name: 'markdown 파일',
             extensions: ['md']
-        }
+        }]
     };
 
     dialog.showSaveDialog(window, options)
@@ -112,10 +175,14 @@ ipcMain.on('save', (event, arg)=>{
     }).catch((error)=>{console.log(error);});
 
 });
+///////////////showSavingDialog => save////////////////////
+//////////////////ipc/////////////////////
 
-console.log('test');
 
-// var menu = Menu.buildFromTemplate(template);
-// module.exports = menu;
 
-module.exports = Menu.buildFromTemplate(template);
+
+module.exports = {
+    menu: Menu.buildFromTemplate(template),
+    saveFile: saveFile,
+    openFile: openFile
+}
