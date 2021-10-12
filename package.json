@@ -19,7 +19,7 @@
   },
   "homepage": "https://github.com/matromen/ele_markdown#readme",
   "devDependencies": {
-    "electron": "^8.0.0",
+    "electron": "^11.5.0",
     "electron-builder": "^22.3.2"
   },
   "dependencies": {
